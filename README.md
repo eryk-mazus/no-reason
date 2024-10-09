@@ -8,7 +8,13 @@ The project uses an LLM to expand a tree of possible reasoning paths. Starting f
 
 Example of solving a reasoning problem with `Llama-3.2-3B-Instruct`:
 
+```bash
+python ./no_reason/main.py
+```
+
 ![screenshot](https://github.com/user-attachments/assets/e8aa5a85-776b-4abd-adc3-f9f4b5108711)
+
+Every HF-based LLM should be supported out of the box.
 
 ## References:
 * [Chain-of-Thought Reasoning without Prompting](https://arxiv.org/pdf/2402.10200)
