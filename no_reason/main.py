@@ -1,22 +1,16 @@
 import json
 import math
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple, Dict
+from typing import Dict, List, Optional, Tuple
 
+import fire
 import torch
 from loguru import logger
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+STEP_SEPARATOR = "\n\n"
+
 model_name = "meta-llama/Llama-3.2-3B-Instruct"
-
-# search settings:
-top_k = 5
-max_branches = top_k
-max_depth = 20  # max depth of the generation tree
-step_separator = "\n\n"
-
-max_new_tokens = 256
-
 
 tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
 model = AutoModelForCausalLM.from_pretrained(
@@ -33,7 +27,7 @@ If an approach is not promising or incorrect, describe your mistake and switch t
 Keep the individual reasoning steps short.
 """
 
-user_prompt = r"""Kylar went to the store to buy glasses for his new apartment. One glass costs $5, but every second glass costs only 60% of the price. Kylar wants to buy 16 glasses. How much does he need to pay for them?"""
+default_user_prompt = r"""Kylar went to the store to buy glasses for his new apartment. One glass costs $5, but every second glass costs only 60% of the price. Kylar wants to buy 16 glasses. How much does he need to pay for them?"""
 
 
 @dataclass
@@ -144,7 +138,7 @@ def expand_branch(
                 break
 
             last_token = tokenizer.decode([next_token_id.item()])
-            if step_separator in last_token:
+            if STEP_SEPARATOR in last_token:
                 break
 
     generated_text = tokenizer.decode(
@@ -154,7 +148,9 @@ def expand_branch(
     return generated_text, log_probs, confidence_score, current_input_ids, is_terminal
 
 
-def expand_tree(root: TreeNode, max_depth: int) -> TreeNode:
+def expand_tree(
+    root: TreeNode, max_depth: int, top_k: int, max_branches: int, max_new_tokens: int
+) -> TreeNode:
     current_node = root
 
     while current_node.depth < max_depth:
@@ -223,7 +219,13 @@ def expand_tree(root: TreeNode, max_depth: int) -> TreeNode:
     return root
 
 
-def main():
+def main(
+    user_prompt: str = default_user_prompt,
+    top_k: int = 5,  # number of top_k tokens to consider while calculating entropy
+    max_branches: int = 5,  # max number of branches to spawn per step - should be equal or less than top_k
+    max_depth: int = 20,  # max depth of the search tree
+    max_new_tokens: int = 256,  # max number of tokens to generate per step
+):
     chat = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt},
@@ -236,7 +238,13 @@ def main():
 
     root = TreeNode(text=user_prompt, token_ids=inputs)
 
-    expand_tree(root, max_depth)
+    expand_tree(
+        root=root,
+        max_depth=max_depth,
+        top_k=top_k,
+        max_branches=max_branches,
+        max_new_tokens=max_new_tokens,
+    )
 
     tree_dict = root.to_dict()
     with open("solution_tree.json", "w") as f:
@@ -246,7 +254,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    fire.Fire(main)
 
 
-# too similar tokens
+# issues: sometimes picking between too similar tokens
