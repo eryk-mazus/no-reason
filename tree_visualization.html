@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solution Tree Visualization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+        }
+        #tree-container {
+            width: 60%;
+            margin: 0 auto;
+        }
+        .node {
+            border: 1px solid #444;
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #2a2a2a;
+            transition: background-color 0.3s ease;
+        }
+        .node:hover {
+            background-color: #3a3a3a;
+        }
+        .children {
+            margin-left: 20px;
+        }
+        .confidence {
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        .highest-confidence {
+            border: 2px solid #4CAF50;
+            background-color: #2e3b2e;
+        }
+        .text-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .root-node {
+            border: 2px solid #007acc;
+            background-color: #2a3b4c;
+            margin-bottom: 15px;
+        }
+        .root-label {
+            font-weight: bold;
+            color: #007acc;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="tree-container"></div>
+
+    <script>
+        function confidenceColor(score) {
+            const r = Math.floor(128 * (1 - score)) + 128;
+            const g = Math.floor(128 * score) + 128;
+            return `rgb(${r}, ${g}, 128)`;
+        }
+
+        function findHighestConfidence(nodes) {
+            return nodes.reduce((max, node) => 
+                node.cot_confidence_score > max.cot_confidence_score ? node : max
+            );
+        }
+
+        function createNodeElement(node, siblings, isRoot = false) {
+            const nodeElement = document.createElement('div');
+            nodeElement.className = isRoot ? 'node root-node' : 'node';
+            
+            if (isRoot) {
+                const rootLabel = document.createElement('div');
+                rootLabel.className = 'root-label';
+                rootLabel.textContent = "User's Prompt:";
+                nodeElement.appendChild(rootLabel);
+            }
+
+            const textElement = document.createElement('div');
+            textElement.className = 'text-content';
+            textElement.textContent = node.text;
+            if (isRoot) {
+                textElement.style.fontWeight = 'bold';
+            }
+            nodeElement.appendChild(textElement);
+            
+            if (!isRoot) {
+                const confidenceElement = document.createElement('div');
+                confidenceElement.className = 'confidence';
+                confidenceElement.textContent = `Confidence: ${node.cot_confidence_score.toFixed(2)}`;
+                confidenceElement.style.color = confidenceColor(node.cot_confidence_score);
+                nodeElement.appendChild(confidenceElement);
+            }
+            
+            if (siblings && findHighestConfidence(siblings) === node) {
+                nodeElement.classList.add('highest-confidence');
+            }
+            
+            if (node.children && node.children.length > 0) {
+                const childrenContainer = document.createElement('div');
+                childrenContainer.className = 'children';
+                
+                node.children.forEach(child => {
+                    childrenContainer.appendChild(createNodeElement(child, node.children));
+                });
+                
+                nodeElement.appendChild(childrenContainer);
+            }
+            
+            return nodeElement;
+        }
+
+        fetch('solution_tree.json')
+            .then(response => response.json())
+            .then(data => {
+                const treeContainer = document.getElementById('tree-container');
+                treeContainer.appendChild(createNodeElement(data, [data], true));
+            })
+            .catch(error => console.error('Error loading the JSON file:', error));
+    </script>
+</body>
+</html>

@@ -25,7 +25,7 @@ model = AutoModelForCausalLM.from_pretrained(
     device_map="auto",
 )
 
-system_prompt = f"""You are an expert AI assistant. Provide the reasoning how to approach and solve the given problem. Separate each reasoning step with "\n\n" separator.
+system_prompt = f"""You are an expert AI assistant. Provide the reasoning how to approach and solve the given problem. Separate each reasoning step with `\n\n` separator.
 Start from understanding the problem and analysing the given examples if they're provided.
 Plan your work by making observations on possible approaches and the constraints.
 Try out the approaches that you proposed. Test them internally using the reasoning.
@@ -59,6 +59,7 @@ class TreeNode:
             "text": self.text,
             "depth": self.depth,
             "cot_confidence_score": self.cot_confidence_score,
+            # "log_prob": self.log_prob,
             "children": [child.to_dict() for child in self.children],
         }
 
