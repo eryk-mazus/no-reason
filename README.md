@@ -16,6 +16,11 @@ python ./no_reason/main.py
 
 Every HF-based LLM should be supported out of the box.
 
+## Backlog:
+* kv-cache with active prunning
+* internal GenRM to prune the search tree
+* benchmarking
+
 ## References:
 * [Chain-of-Thought Reasoning without Prompting](https://arxiv.org/pdf/2402.10200)
 
